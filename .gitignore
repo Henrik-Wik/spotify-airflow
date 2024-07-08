@@ -3,3 +3,4 @@ auth.py
 .cache
 __pycache__
 logs
+spotify_data.db
