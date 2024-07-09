@@ -4,3 +4,4 @@ auth.py
 __pycache__
 logs
 spotify_data.db
+.env
