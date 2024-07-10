@@ -1,35 +1,18 @@
-from sqlalchemy import create_engine
-from auth import HOST, DB_NAME, PORT, PG_PASSWORD, PG_USER
+# from sqlalchemy import create_engine
+# from auth import HOST, DB_NAME, PORT, PG_PASSWORD, PG_USER
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 
 class PgConnect:
-    def __init__(self):
-        self.host = HOST
-        self.db_name = DB_NAME
-        self.port = PORT
-        self.user = PG_USER
-        self.password = PG_PASSWORD
-        self.engine = None
+    def __init__(self, conn_id="postgres_localhost"):
+        self.conn_id = conn_id
+        self.hook = PostgresHook(postgres_conn_id=self.conn_id)
+        self.connection = None
 
     def __enter__(self):
-        self.engine = create_engine(
-            f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
-        )
-        return self.engine
+        self.connection = self.hook.get_conn()
+        return self.connection
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.engine:
-            self.engine.dispose()
-
-
-if __name__ == "__main__":
-    # Example usage
-    with PgConnect() as engine:
-        if engine:
-            try:
-                # Example query
-                result = engine.execute("SELECT * FROM your_table")
-                for row in result:
-                    print(row)
-            except Exception as e:
-                print(f"Error executing query: {e}")
+        if self.connection:
+            self.connection.close()
