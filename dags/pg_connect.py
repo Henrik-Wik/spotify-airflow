@@ -1,5 +1,3 @@
-# from sqlalchemy import create_engine
-# from auth import HOST, DB_NAME, PORT, PG_PASSWORD, PG_USER
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 
