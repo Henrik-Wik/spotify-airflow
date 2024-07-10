@@ -3,14 +3,15 @@ CREATE TABLE IF NOT EXISTS spotify_songs_raw (
     id SERIAL PRIMARY KEY,
     raw_json JSONB,
     processed BOOLEAN DEFAULT FALSE,
-    timestamp TIMESTAMPTZ
+    fetched_timestamp TIMESTAMPTZ,
+    played_at_timestamp TIMESTAMPTZ
 );
 """
 
 CREATE_TRANSFORMED_TABLE = """
 CREATE TABLE IF NOT EXISTS spotify_songs_transformed (
-    played_at_utc TIMESTAMP,
-    played_date_utc DATE,
+    played_at TIMESTAMP,
+    played_date DATE,
     song_name TEXT,
     artist_name TEXT,
     song_duration_ms INTEGER,
@@ -20,6 +21,6 @@ CREATE TABLE IF NOT EXISTS spotify_songs_transformed (
     album_id TEXT,
     artist_id TEXT,
     track_id TEXT,
-    last_updated_datetime_utc TIMESTAMP
+    updated_at TIMESTAMP
 );
 """
