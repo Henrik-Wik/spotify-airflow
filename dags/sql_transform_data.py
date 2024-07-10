@@ -1,8 +1,8 @@
 # Insert transformed data from raw JSON to the transformed table
 TRANSFORM_AND_UPDATE_DATA = """
 INSERT INTO spotify_songs_transformed (
-    played_at,
-    played_date,
+    played_at_timestamp,
+    played_at_date,
     song_name,
     artist_name,
     song_duration_ms,
@@ -12,11 +12,11 @@ INSERT INTO spotify_songs_transformed (
     album_id,
     artist_id,
     track_id,
-    updated_at
+    updated_at_timestamp
 )
 SELECT
-    (data ->> 'played_at')::TIMESTAMP as played_at,
-    LEFT(data ->> 'played_at', 10)::DATE as played_date,
+    (data ->> 'played_at')::TIMESTAMPTZ as played_at_timestamp,
+    LEFT(data ->> 'played_at', 10)::DATE as played_at_date,
     data -> 'track' ->> 'name' as song_name,
     data -> 'track' -> 'album' -> 'artists' -> 0 ->> 'name' as artist_name,
     (data -> 'track' ->> 'duration_ms')::INTEGER as song_duration_ms,
@@ -26,7 +26,7 @@ SELECT
     data -> 'track' -> 'album' ->> 'id' as album_id,
     data -> 'track' -> 'artists' -> 0 ->> 'id' as artist_id,
     data -> 'track' ->> 'id' as track_id,
-    NOW()::TIMESTAMP as updated_at
+    NOW()::TIMESTAMPTZ as updated_at_timestamp
 FROM (
     SELECT jsonb_array_elements(raw_json->'items') as data
     FROM spotify_songs_raw

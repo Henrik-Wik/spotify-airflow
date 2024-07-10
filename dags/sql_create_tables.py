@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS spotify_songs_raw (
 
 CREATE_TRANSFORMED_TABLE = """
 CREATE TABLE IF NOT EXISTS spotify_songs_transformed (
-    played_at TIMESTAMP,
-    played_date DATE,
+    played_at_timestamp TIMESTAMPTZ,
+    played_at_date DATE,
     song_name TEXT,
     artist_name TEXT,
     song_duration_ms INTEGER,
@@ -21,6 +21,6 @@ CREATE TABLE IF NOT EXISTS spotify_songs_transformed (
     album_id TEXT,
     artist_id TEXT,
     track_id TEXT,
-    updated_at TIMESTAMP
+    updated_at_timestamp TIMESTAMPTZ
 );
 """
