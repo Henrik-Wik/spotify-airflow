@@ -13,7 +13,6 @@ class FetchSpotifyData:
         self.client_id = CLIENT_ID
         self.client_secret = CLIENT_SECRET
         self.redirect_uri = REDIRECT_URI
-        # self.access_token = ""
 
     def get_access_token(self):
         auth_manager = SpotifyOAuth(
@@ -60,21 +59,25 @@ class FetchSpotifyData:
         if played_at:
             latest_played_at_insert = max(played_at)
         else:
-            print("Error, no new music to fetch.")
+            print("No new music to fetch. Skipping.")
             latest_played_at_insert = None
 
-        with PgConnect() as conn:
-            if conn:
-                cursor = conn.cursor()
-                try:
-                    cursor.execute(
-                        "INSERT INTO spotify_songs_raw (raw_json, fetched_timestamp, played_at_timestamp) VALUES (%s, %s, %s)",
-                        (
-                            song_data_raw,
-                            fetched_timestamp_insert,
-                            latest_played_at_insert,
-                        ),
-                    )
-                    conn.commit()
-                except Exception as e:
-                    print(f"Error executing query: {e}")
+        if latest_played_at_insert is not None:
+
+            with PgConnect() as conn:
+                if conn:
+                    cursor = conn.cursor()
+                    try:
+                        cursor.execute(
+                            "INSERT INTO spotify_songs_raw (raw_json, fetched_timestamp, played_at_timestamp) VALUES (%s, %s, %s)",
+                            (
+                                song_data_raw,
+                                fetched_timestamp_insert,
+                                latest_played_at_insert,
+                            ),
+                        )
+                        conn.commit()
+                    except Exception as e:
+                        print(f"Error executing query: {e}")
+        else:
+            print("No database action needed.")
