@@ -8,7 +8,7 @@ from tasks.sql.sql_transform_data import TRANSFORM_AND_UPDATE_DATA
 
 def fetch_data_callable():
     fetch_data = FetchSpotifyData()
-    fetch_data.get_data()
+    fetch_data.load_data()
 
 
 default_args = {

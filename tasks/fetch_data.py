@@ -25,7 +25,8 @@ class FetchSpotifyData:
 
         return auth_manager
 
-    def get_latest_timestamp(self, column_name):
+    @staticmethod
+    def get_latest_timestamp(column_name):
         timestamp = None
         with PgConnect() as conn:
             if conn:
@@ -55,6 +56,12 @@ class FetchSpotifyData:
         song_data_raw = json.dumps(song_data)
         fetched_timestamp_insert = datetime.now(timezone.utc)
         played_at = [item["played_at"] for item in song_data["items"]]
+
+        return song_data_raw, fetched_timestamp_insert, played_at
+
+    def load_data(self):
+
+        song_data_raw, fetched_timestamp_insert, played_at = self.get_data()
 
         if played_at:
             latest_played_at_insert = max(played_at)
