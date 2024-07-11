@@ -31,7 +31,9 @@ FROM (
     SELECT jsonb_array_elements(raw_json->'items') as data
     FROM spotify_songs_raw
     WHERE processed = FALSE
-) sub;
+) sub
+ON CONFLICT (played_at_timestamp) DO UPDATE SET
+    updated_at_timestamp = EXCLUDED.updated_at_timestamp;
 
 UPDATE spotify_songs_raw SET processed = TRUE WHERE processed = FALSE;
 """
