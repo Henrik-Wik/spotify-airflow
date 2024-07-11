@@ -2,8 +2,8 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from datetime import datetime, timedelta
-from fetch_data import FetchSpotifyData
-from sql_transform_data import TRANSFORM_AND_UPDATE_DATA
+from tasks.fetch_data import FetchSpotifyData
+from sql.sql_transform_data import TRANSFORM_AND_UPDATE_DATA
 
 
 def fetch_data_callable():
