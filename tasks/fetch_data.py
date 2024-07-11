@@ -1,10 +1,10 @@
 import spotipy
 import json
 
-from pg_connect import PgConnect
+from config.pg_connect import PgConnect
 from spotipy.oauth2 import SpotifyOAuth
 from datetime import datetime, timezone
-from auth import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
+from config.auth import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
 
 
 class FetchSpotifyData:
