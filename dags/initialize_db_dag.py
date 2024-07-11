@@ -2,7 +2,7 @@ from airflow import DAG
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.utils.dates import days_ago
 from datetime import timedelta
-from sql.sql_create_tables import CREATE_TRANSFORMED_TABLE, CREATE_RAW_TABLE
+from tasks.sql.sql_create_tables import CREATE_TRANSFORMED_TABLE, CREATE_RAW_TABLE
 
 
 default_args = {

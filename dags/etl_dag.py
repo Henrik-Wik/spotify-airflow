@@ -6,7 +6,7 @@ from tasks.fetch_data import FetchSpotifyData
 from tasks.sql.sql_transform_data import TRANSFORM_AND_UPDATE_DATA
 
 
-def fetch_data_callable():
+def fetch_data_callable() -> None:
     fetch_data = FetchSpotifyData()
     fetch_data.load_data()
 

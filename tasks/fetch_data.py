@@ -1,3 +1,4 @@
+from click import Option
 import spotipy
 import json
 
@@ -5,16 +6,17 @@ from config.pg_connect import PgConnect
 from spotipy.oauth2 import SpotifyOAuth
 from datetime import datetime, timezone
 from config.auth import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
+from typing import Optional, Tuple, List
 
 
 class FetchSpotifyData:
 
     def __init__(self):
-        self.client_id = CLIENT_ID
-        self.client_secret = CLIENT_SECRET
-        self.redirect_uri = REDIRECT_URI
+        self.client_id: str = CLIENT_ID
+        self.client_secret: str = CLIENT_SECRET
+        self.redirect_uri: str = REDIRECT_URI
 
-    def get_access_token(self):
+    def get_access_token(self) -> SpotifyOAuth:
         auth_manager = SpotifyOAuth(
             client_id=self.client_id,
             client_secret=self.client_secret,
@@ -26,8 +28,8 @@ class FetchSpotifyData:
         return auth_manager
 
     @staticmethod
-    def get_latest_timestamp(column_name):
-        timestamp = None
+    def get_latest_timestamp(column_name: str) -> Optional[datetime]:
+        timestamp: Optional[datetime] = None
         with PgConnect() as conn:
             if conn:
                 cursor = conn.cursor()
@@ -42,7 +44,7 @@ class FetchSpotifyData:
 
         return timestamp
 
-    def get_data(self):
+    def get_data(self) -> Tuple[str, datetime, List[str]]:
         auth_manager = self.get_access_token()
         sp = spotipy.Spotify(auth_manager=auth_manager)
 
@@ -59,7 +61,7 @@ class FetchSpotifyData:
 
         return song_data_raw, fetched_timestamp_insert, played_at
 
-    def load_data(self):
+    def load_data(self) -> None:
 
         song_data_raw, fetched_timestamp_insert, played_at = self.get_data()
 
