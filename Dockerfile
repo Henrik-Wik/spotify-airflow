@@ -1,6 +1,6 @@
 FROM apache/airflow:2.9.2
-WORKDIR /usr/src/spotify_airflow
+WORKDIR /opt/airflow
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . . 
-ENV PYTHONPATH="/usr/src/spotify_airflow/dags:/usr/src/spotify_airflow/plugins:/usr/src/spotify_airflow/config:/usr/src/spotify_airflow/tasks:/usr/src/spotify_airflow/tasks/sql:$PYTHONPATH"
+ENV PYTHONPATH="/opt/airflow/dags:/opt/airflow/plugins:/opt/airflow/config:/opt/airflow/tasks:/opt/airflow/tasks/sql:$PYTHONPATH"
