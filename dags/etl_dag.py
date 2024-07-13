@@ -2,7 +2,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from datetime import datetime, timedelta
-from tasks.fetch_recently_played import FetchSpotifyRecentlyPlayed
+from tasks.fetch_spotify_data import FetchSpotifyData
 from tasks.sql.sql_transform_data import TRANSFORM_AND_UPDATE_DATA
 
 
@@ -19,7 +19,7 @@ default_args = {
 
 # instantiate class to call function
 def fetch_data_callable() -> None:
-    fetch_data = FetchSpotifyRecentlyPlayed()
+    fetch_data = FetchSpotifyData()
     fetch_data.load_data()
 
 
