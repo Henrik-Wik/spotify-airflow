@@ -1,21 +1,20 @@
 from airflow import DAG
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
-from airflow.utils.dates import days_ago
-from datetime import timedelta
+from datetime import datetime, timedelta
 from tasks.sql.sql_create_tables import CREATE_TRANSFORMED_TABLE, CREATE_RAW_TABLE
 
 
 default_args = {
     "owner": "airflow",
     "depends_on_past": False,
-    "start_date": days_ago(1),
+    "start_date": datetime(2023, 7, 8),
     "email_on_failure": False,
     "email_on_retry": False,
-    "retries": 0,
+    "retries": 1,
     "retry_delay": timedelta(minutes=5),
 }
 
-
+# dag for initializing db with tables and sample data.
 with DAG(
     dag_id="init_db_dag",
     schedule_interval=None,
@@ -34,6 +33,7 @@ with DAG(
         sql=CREATE_TRANSFORMED_TABLE,
     )
 
+    # by inserting sample data we have a default timestamp to use when fetching.
     insert_sample_data = SQLExecuteQueryOperator(
         task_id="insert_sample_data",
         conn_id="postgres_localhost",
@@ -46,7 +46,7 @@ with DAG(
             , '2023-07-08T10:00:00Z'
         );
         """,
-    )  # set processed to true so the sample data doesn't get included later.
+    )  # set processed to true so the sample data doesn't get included in the transformation.
 
     create_raw_table >> insert_sample_data
     create_transformed_table

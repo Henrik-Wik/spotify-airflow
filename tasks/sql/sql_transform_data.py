@@ -37,3 +37,4 @@ ON CONFLICT (played_at_timestamp) DO UPDATE SET
 
 UPDATE spotify_songs_raw SET processed = TRUE WHERE processed = FALSE;
 """
+# the "on conflict" clause lets us ignore rows that are not unique but still update the "updated at" timestamp.
