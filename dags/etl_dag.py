@@ -2,13 +2,8 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from datetime import datetime, timedelta
-from tasks.fetch_data import FetchSpotifyData
+from tasks.fetch_recently_played import FetchSpotifyRecentlyPlayed
 from tasks.sql.sql_transform_data import TRANSFORM_AND_UPDATE_DATA
-
-
-def fetch_data_callable() -> None:
-    fetch_data = FetchSpotifyData()
-    fetch_data.load_data()
 
 
 default_args = {
@@ -17,15 +12,22 @@ default_args = {
     "start_date": datetime(2023, 7, 8),
     "email_on_failure": False,
     "email_on_retry": False,
-    "retries": 0,
+    "retries": 1,
     "retry_delay": timedelta(minutes=5),
 }
 
 
+# instantiate class to call function
+def fetch_data_callable() -> None:
+    fetch_data = FetchSpotifyRecentlyPlayed()
+    fetch_data.load_data()
+
+
+# dag for the main etl process.
 with DAG(
     dag_id="etl_dag",
-    schedule_interval="0 0 * * *",
-    max_active_runs=2,
+    schedule_interval="0 * * * *",  # runs hourly
+    max_active_runs=1,
     catchup=False,
     default_args=default_args,
 ) as dag:
