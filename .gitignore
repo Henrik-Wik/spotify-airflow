@@ -6,3 +6,4 @@ logs
 .env
 test.sql
 todo.md
+test.py
