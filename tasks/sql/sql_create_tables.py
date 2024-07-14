@@ -1,28 +1,35 @@
-CREATE_RAW_TABLE = """
-CREATE TABLE IF NOT EXISTS spotify_songs_raw (
-    id SERIAL PRIMARY KEY,
-    raw_json JSONB,
-    processed BOOLEAN DEFAULT FALSE,
-    fetched_timestamp TIMESTAMPTZ,
-    played_at_timestamp TIMESTAMPTZ
-);
-"""
-# we set played_at_timestamp to the pk to minimize duplicates since I wont be listening to multiple songs at once.
-CREATE_TRANSFORMED_TABLE = """
-CREATE TABLE IF NOT EXISTS spotify_songs_transformed (
-    played_at_timestamp TIMESTAMPTZ PRIMARY KEY,
-    played_at_date DATE,
-    song_name TEXT,
-    artist_name TEXT,
-    song_duration_ms INTEGER,
-    song_link TEXT,
-    album_art_link TEXT,
-    album_name TEXT,
-    album_id TEXT,
-    artist_id TEXT,
+CREATE_RECENTLY_PLAYED_RAW_TABLE = """
+CREATE TABLE IF NOT EXISTS recently_played_raw (
+    played_at TIMESTAMPTZ PRIMARY KEY,
     track_id TEXT,
-    updated_at_timestamp TIMESTAMPTZ,
-    UNIQUE (played_at_timestamp)
+    track_name TEXT,
+    artist_id TEXT,
+    artist_name TEXT,
+    album_name TEXT
 );
 """
-# by making the pk unique we can omit all rows where played_at_timestamp is already in the db.
+CREATE_ARTISTS_RAW_TABLE = """
+CREATE TABLE IF NOT EXISTS artists_raw (
+    artist_id TEXT PRIMARY KEY,
+    artist_name TEXT,
+    genres TEXT
+);
+"""
+CREATE_AUDIO_FEATURES_RAW_TABLE = """
+CREATE TABLE IF NOT EXISTS audio_features_raw (
+    id TEXT PRIMARY KEY,
+    danceability FLOAT,
+    energy FLOAT,
+    key INTEGER,
+    loudness FLOAT,
+    mode INTEGER,
+    speechiness FLOAT,
+    acousticness FLOAT,
+    instrumentalness FLOAT,
+    liveness FLOAT,
+    valence FLOAT,
+    tempo FLOAT,
+    duration_ms INTEGER,
+    time_signature INTEGER
+);
+"""

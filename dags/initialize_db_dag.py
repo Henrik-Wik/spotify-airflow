@@ -1,7 +1,11 @@
 from airflow import DAG
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from datetime import datetime, timedelta
-from tasks.sql.sql_create_tables import CREATE_TRANSFORMED_TABLE, CREATE_RAW_TABLE
+from tasks.sql.sql_create_tables import (
+    CREATE_ARTISTS_RAW_TABLE,
+    CREATE_AUDIO_FEATURES_RAW_TABLE,
+    CREATE_RECENTLY_PLAYED_RAW_TABLE,
+)
 
 
 default_args = {
@@ -23,30 +27,23 @@ with DAG(
     default_args=default_args,
 ) as dag:
 
-    create_raw_table = SQLExecuteQueryOperator(
-        task_id="create_raw_table", conn_id="postgres_localhost", sql=CREATE_RAW_TABLE
+    create_recently_played_raw_table = SQLExecuteQueryOperator(
+        task_id="create_recently_played_raw_table",
+        conn_id="postgres_localhost",
+        sql=CREATE_RECENTLY_PLAYED_RAW_TABLE,
     )
 
-    create_transformed_table = SQLExecuteQueryOperator(
-        task_id="create_transformed_table",
+    create_artists_raw_table = SQLExecuteQueryOperator(
+        task_id="create_artists_raw_table",
         conn_id="postgres_localhost",
-        sql=CREATE_TRANSFORMED_TABLE,
+        sql=CREATE_ARTISTS_RAW_TABLE,
+    )
+    create_audio_features_raw_table = SQLExecuteQueryOperator(
+        task_id="create_audio_features_raw_table",
+        conn_id="postgres_localhost",
+        sql=CREATE_AUDIO_FEATURES_RAW_TABLE,
     )
 
-    # by inserting sample data we have a default timestamp to use when fetching.
-    insert_sample_data = SQLExecuteQueryOperator(
-        task_id="insert_sample_data",
-        conn_id="postgres_localhost",
-        sql="""
-        INSERT INTO spotify_songs_raw (raw_json, processed, fetched_timestamp, played_at_timestamp) 
-        VALUES (
-            '{"items": [{"played_at": "2023-07-08T10:00:00Z", "track": {"name": "Sample Song", "album": {"artists": [{"name": "Sample Artist"}], "images": [{"url": ""}, {"url": "http://sample_url"}], "name": "Sample Album", "id": "sample_album_id"}, "duration_ms": 180000, "external_urls": {"spotify": "http://sample_song_link"}, "artists": [{"id": "sample_artist_id"}], "id": "sample_track_id"}}]}'
-            , TRUE
-            , '2023-07-08T10:00:00Z'
-            , '2023-07-08T10:00:00Z'
-        );
-        """,
-    )  # set processed to true so the sample data doesn't get included in the transformation.
-
-    create_raw_table >> insert_sample_data
-    create_transformed_table
+    create_recently_played_raw_table
+    create_artists_raw_table
+    create_audio_features_raw_table
