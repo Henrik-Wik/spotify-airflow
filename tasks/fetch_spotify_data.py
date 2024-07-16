@@ -1,6 +1,7 @@
 import spotipy
 import pandas as pd
 import logging
+from airflow.exceptions import AirflowSkipException, AirflowFailException
 from spotipy.oauth2 import SpotifyOAuth
 from config.pg_connect import PgConnect
 from datetime import datetime, timedelta, timezone
@@ -46,7 +47,7 @@ class FetchSpotifyData:
                     )
                     timestamp = cursor.fetchone()[0]
                 except Exception as e:
-                    self.logger.error(f"Error executing query: {e}", exc_info=True)
+                    raise AirflowFailException(f"Error executing query: {e}")
         if not timestamp:
             timestamp = self.current_time - timedelta(days=30)
         return timestamp
@@ -128,9 +129,7 @@ class FetchSpotifyData:
     def load_data(self):
         """Load data into postgresql database."""
         recent_songs, track_ids, artist_ids = self.fetch_song_data()
-        if not recent_songs:
-            self.logger.info("No new music to fetch. Skipping.")
-        else:
+        if recent_songs:
             self.logger.info(f"Fetched {len(recent_songs)} songs.")
 
             recent_songs_df = pd.DataFrame(recent_songs)
@@ -160,9 +159,10 @@ class FetchSpotifyData:
                             conn.commit()
 
                         except Exception as e:
-                            self.logger.error(
-                                f"Error executing query for table: {table_name} {e}",
-                                exc_info=True,
-                            )
                             conn.rollback()
+                            raise AirflowFailException(
+                                f"Error executing query for table: {table_name} {e}"
+                            )
                     cursor.close()
+        else:  # skip task if no new music can be fetched
+            raise AirflowSkipException("No new music to fetch. Skipping.")
