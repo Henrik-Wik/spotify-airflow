@@ -24,20 +24,20 @@ ON CONFLICT (artist_id) DO NOTHING;
 
 INSERT_AUDIO_FEATURES_RAW = """
 INSERT INTO audio_features_raw (
-    id,
-    danceability,
-    energy,
-    key,
-    loudness,
-    mode,
-    speechiness,
-    acousticness,
-    instrumentalness,
-    liveness,
-    valence,
-    tempo,
-    duration_ms,
-    time_signature
+    id
+,   danceability
+,   energy
+,   key
+,   loudness
+,   mode
+,   speechiness
+,   acousticness
+,   instrumentalness
+,   liveness
+,   valence
+,   tempo
+,   duration_ms
+,   time_signature
 )
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT (id) DO NOTHING;
