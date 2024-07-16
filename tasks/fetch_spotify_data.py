@@ -1,10 +1,10 @@
 import spotipy
 import pandas as pd
-
+import logging
 from spotipy.oauth2 import SpotifyOAuth
 from config.pg_connect import PgConnect
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Tuple, List, Dict
+from typing import Tuple, List, Dict
 from config.auth import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
 from tasks.sql.sql_insert_data import (
     INSERT_ARTISTS_RAW,
@@ -18,22 +18,25 @@ class FetchSpotifyData:
         self.client_id: str = CLIENT_ID
         self.client_secret: str = CLIENT_SECRET
         self.redirect_uri: str = REDIRECT_URI
+        self.logger = logging.getLogger("FetchSpotifyData")
+        self.logger.setLevel(logging.INFO)
+        self.current_time = datetime.now(timezone.utc)
+        self.sp = self.init_spotify_auth()
 
-    def get_access_token(self) -> SpotifyOAuth:
+    def init_spotify_auth(self) -> spotipy.Spotify:
         auth_manager = SpotifyOAuth(
             client_id=self.client_id,
             client_secret=self.client_secret,
             redirect_uri=self.redirect_uri,
-            scope="user-read-private user-library-read user-read-recently-played",
+            scope="user-read-recently-played",
             cache_path="/opt/airflow/config/.cache",
         )
 
-        return auth_manager
+        return spotipy.Spotify(auth_manager=auth_manager)
 
-    @staticmethod
-    def get_latest_played_timestamp() -> Optional[datetime]:
-        """gets latest played timestamp from database to limit the fetched data."""
-        timestamp: Optional[datetime] = None
+    def get_latest_played_timestamp(self) -> datetime:
+        """Get latest played timestamp from database to limit the fetched data."""
+        timestamp: datetime = None
         with PgConnect() as conn:
             if conn:
                 cursor = conn.cursor()
@@ -43,79 +46,97 @@ class FetchSpotifyData:
                     )
                     timestamp = cursor.fetchone()[0]
                 except Exception as e:
-                    print(f"Error executing query: {e}")
+                    self.logger.error(f"Error executing query: {e}", exc_info=True)
         if not timestamp:
-            timestamp = datetime.now(timezone.utc) - timedelta(days=1)
+            timestamp = self.current_time - timedelta(days=30)
         return timestamp
 
-    def fetch_data(self) -> Tuple[List[Dict], datetime, Dict[str, Dict]]:
-        auth_manager = self.get_access_token()
-        sp = spotipy.Spotify(auth_manager=auth_manager)
-
-        # only gets data listened to after the latest played song in the db.
+    def fetch_song_data(self) -> Tuple[List[Dict], List[str], set]:
+        """Fetch and process recently played songs data."""
         latest_played_at_timestamp = self.get_latest_played_timestamp()
         latest_unix_timestamp = int(latest_played_at_timestamp.timestamp() * 1000)
-        song_data = sp.current_user_recently_played(
-            limit=50, before=latest_unix_timestamp
+        song_data = self.sp.current_user_recently_played(
+            limit=50, after=latest_unix_timestamp
         )
-        if not song_data:
-            print("No new music to fetch. Skipping transformation.")
-            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        recent_songs = []
+        artist_ids = set()
+        track_ids = []
 
-        else:
-            recent_songs = []
-            artists = {}
-            track_ids = []
-            for item in song_data["items"]:
-                recent_song_info = {
-                    "played_at": item["played_at"],
-                    "track_id": item["track"]["id"],
-                    "track_name": item["track"]["name"],
-                    "artist_id": item["track"]["artists"][0]["id"],
-                    "artist_name": item["track"]["artists"][0]["name"],
-                    "album_name": item["track"]["album"]["name"],
+        for item in song_data["items"]:
+            recent_song_info = {
+                "played_at": item["played_at"],
+                "track_id": item["track"]["id"],
+                "track_name": item["track"]["name"],
+                "artist_id": item["track"]["artists"][0]["id"],
+                "artist_name": item["track"]["artists"][0]["name"],
+                "album_name": item["track"]["album"]["name"],
+                "transformed": False,
+                "updated_at": self.current_time,
+            }
+            recent_songs.append(recent_song_info)
+            track_ids.append(recent_song_info["track_id"])
+            artist_ids.add(recent_song_info["artist_id"])
+
+        return recent_songs, track_ids, artist_ids
+
+    def fetch_artist_data(self, artist_ids: set) -> pd.DataFrame:
+        """Fetch and process artists data."""
+        artists = {}
+        artist_ids_list = list(artist_ids)
+        for i in range(0, len(artist_ids_list), 50):
+            artists_data = self.sp.artists(artist_ids_list[i : i + 50])
+            for artist in artists_data["artists"]:
+                artists[artist["id"]] = {
+                    "artist_id": artist["id"],
+                    "artist_name": artist["name"],
+                    "genres": artist["genres"],
+                    "updated_at": self.current_time,
                 }
-                recent_songs.append(recent_song_info)
-                track_ids.append(recent_song_info["track_id"])
-                if recent_song_info["artist_id"] not in artists:
-                    artist_info = sp.artist(recent_song_info["artist_id"])
-                    artists[recent_song_info["artist_id"]] = {
-                        "artist_id": artist_info["id"],
-                        "artist_name": artist_info["name"],
-                        "genres": artist_info["genres"],
-                    }
-            recent_songs_df = pd.DataFrame(recent_songs)
-            artists_df = pd.DataFrame.from_dict(artists, orient="index")
 
-            audio_features = sp.audio_features(track_ids)
-            audio_features_df = pd.DataFrame(audio_features)
+        return pd.DataFrame.from_dict(artists, orient="index")
 
-            audio_features_df = audio_features_df[
-                [
-                    "id",
-                    "danceability",
-                    "energy",
-                    "key",
-                    "loudness",
-                    "mode",
-                    "speechiness",
-                    "acousticness",
-                    "instrumentalness",
-                    "liveness",
-                    "valence",
-                    "tempo",
-                    "duration_ms",
-                    "time_signature",
-                ]
+    def fetch_audio_features(self, track_ids: List[str]) -> pd.DataFrame:
+        """Fetch and process audio features data."""
+        audio_features_list = []
+        for i in range(0, len(track_ids), 100):
+            audio_features = self.sp.audio_features(track_ids[i : i + 50])
+            audio_features_list.extend(audio_features)
+        audio_features_df = pd.DataFrame(audio_features)
+        audio_features_df["updated_at"] = self.current_time
+
+        audio_features_df = audio_features_df[
+            [
+                "id",
+                "danceability",
+                "energy",
+                "key",
+                "loudness",
+                "mode",
+                "speechiness",
+                "acousticness",
+                "instrumentalness",
+                "liveness",
+                "valence",
+                "tempo",
+                "duration_ms",
+                "time_signature",
+                "updated_at",
             ]
-            return recent_songs_df, artists_df, audio_features_df
+        ]
+        return audio_features_df
 
     def load_data(self):
-        recent_songs_df, artists_df, audio_features_df = self.fetch_data()
-
-        if recent_songs_df.empty:
-            print("Nothing to load into db. Skipping.")
+        """Load data into postgresql database."""
+        recent_songs, track_ids, artist_ids = self.fetch_song_data()
+        if not recent_songs:
+            self.logger.info("No new music to fetch. Skipping.")
         else:
+            self.logger.info(f"Fetched {len(recent_songs)} songs.")
+
+            recent_songs_df = pd.DataFrame(recent_songs)
+            artists_df = self.fetch_artist_data(artist_ids)
+            audio_features_df = self.fetch_audio_features(track_ids)
+
             dfs = [
                 (recent_songs_df, "recently_played_raw"),
                 (artists_df, "artists_raw"),
@@ -139,6 +160,9 @@ class FetchSpotifyData:
                             conn.commit()
 
                         except Exception as e:
-                            print(f"Error executing query for table: {table_name} {e}")
+                            self.logger.error(
+                                f"Error executing query for table: {table_name} {e}",
+                                exc_info=True,
+                            )
                             conn.rollback()
                     cursor.close()
