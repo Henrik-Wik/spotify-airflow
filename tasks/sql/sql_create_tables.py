@@ -5,14 +5,17 @@ CREATE TABLE IF NOT EXISTS recently_played_raw (
     track_name TEXT,
     artist_id TEXT,
     artist_name TEXT,
-    album_name TEXT
+    album_name TEXT,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    transformed BOOLEAN DEFAULT FALSE
 );
 """
 CREATE_ARTISTS_RAW_TABLE = """
 CREATE TABLE IF NOT EXISTS artists_raw (
     artist_id TEXT PRIMARY KEY,
     artist_name TEXT,
-    genres TEXT
+    genres TEXT,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 """
 CREATE_AUDIO_FEATURES_RAW_TABLE = """
@@ -30,7 +33,8 @@ CREATE TABLE IF NOT EXISTS audio_features_raw (
     valence FLOAT,
     tempo FLOAT,
     duration_ms INTEGER,
-    time_signature INTEGER
+    time_signature INTEGER,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 """
 CREATE_SPOTIFY_DATA_TRANSFORMED_TABLE = """
@@ -55,5 +59,6 @@ CREATE TABLE IF NOT EXISTS spotify_data_transformed (
 ,   tempo FLOAT
 ,   duration_ms INTEGER
 ,   time_signature INTEGER
+,   updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 """
