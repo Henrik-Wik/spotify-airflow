@@ -1,6 +1,6 @@
 CREATE_RECENTLY_PLAYED_RAW_TABLE = """
 CREATE TABLE IF NOT EXISTS recently_played_raw (
-,    played_at TIMESTAMPTZ PRIMARY KEY
+     played_at TIMESTAMPTZ PRIMARY KEY
 ,    track_id TEXT
 ,    track_name TEXT
 ,    artist_id TEXT
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS recently_played_raw (
 """
 CREATE_ARTISTS_RAW_TABLE = """
 CREATE TABLE IF NOT EXISTS artists_raw (
-,    artist_id TEXT PRIMARY KEY
+     artist_id TEXT PRIMARY KEY
 ,    artist_name TEXT
 ,    genres TEXT
 ,    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS artists_raw (
 """
 CREATE_AUDIO_FEATURES_RAW_TABLE = """
 CREATE TABLE IF NOT EXISTS audio_features_raw (
-,    id TEXT PRIMARY KEY
+     id TEXT PRIMARY KEY
 ,    danceability FLOAT
 ,    energy FLOAT
 ,    track_name TEXT
