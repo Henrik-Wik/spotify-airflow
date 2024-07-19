@@ -7,3 +7,4 @@ logs
 test.sql
 todo.md
 test.py
+/data/*

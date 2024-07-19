@@ -52,36 +52,41 @@ class FetchSpotifyData:
             timestamp = self.current_time - timedelta(days=30)
         return timestamp
 
-    def fetch_song_data(self) -> Tuple[List[Dict], List[str], set]:
-        """Fetch and process recently played songs data."""
+    def fetch_and_process_song_data(self) -> Tuple[pd.DataFrame, List[str], set]:
+        """Fetch, process recently played songs data and save to csv."""
         latest_played_at_timestamp = self.get_latest_played_timestamp()
         latest_unix_timestamp = int(latest_played_at_timestamp.timestamp() * 1000)
         song_data = self.sp.current_user_recently_played(
             limit=50, after=latest_unix_timestamp
         )
-        recent_songs = []
-        artist_ids = set()
-        track_ids = []
+        if song_data["items"]:
+            recent_songs = []
+            artist_ids = set()
+            track_ids = []
 
-        for item in song_data["items"]:
-            recent_song_info = {
-                "played_at": item["played_at"],
-                "track_id": item["track"]["id"],
-                "track_name": item["track"]["name"],
-                "artist_id": item["track"]["artists"][0]["id"],
-                "artist_name": item["track"]["artists"][0]["name"],
-                "album_name": item["track"]["album"]["name"],
-                "transformed": False,
-                "updated_at": self.current_time,
-            }
-            recent_songs.append(recent_song_info)
-            track_ids.append(recent_song_info["track_id"])
-            artist_ids.add(recent_song_info["artist_id"])
+            for item in song_data["items"]:
+                recent_song_info = {
+                    "played_at": item["played_at"],
+                    "track_id": item["track"]["id"],
+                    "track_name": item["track"]["name"],
+                    "artist_id": item["track"]["artists"][0]["id"],
+                    "artist_name": item["track"]["artists"][0]["name"],
+                    "album_name": item["track"]["album"]["name"],
+                    "transformed": False,
+                    "updated_at": self.current_time,
+                }
+                recent_songs.append(recent_song_info)
+                track_ids.append(recent_song_info["track_id"])
+                artist_ids.add(recent_song_info["artist_id"])
+                recent_songs_df = pd.DataFrame(recent_songs)
+                recent_songs_df.to_csv(f"/opt/airflow/data/recent_songs_raw_{self.current_time.strftime("%Y%m%d%H%M%S")}.csv")
 
-        return recent_songs, track_ids, artist_ids
+            return recent_songs_df, track_ids, artist_ids
+        else:
+            return pd.DataFrame(), None, None
 
-    def fetch_artist_data(self, artist_ids: set) -> pd.DataFrame:
-        """Fetch and process artists data."""
+    def fetch_and_process_artist_data(self, artist_ids: set) -> pd.DataFrame:
+        """Fetch and process artists data and save to csv."""
         artists = {}
         artist_ids_list = list(artist_ids)
         for i in range(0, len(artist_ids_list), 50):
@@ -93,11 +98,13 @@ class FetchSpotifyData:
                     "genres": artist["genres"],
                     "updated_at": self.current_time,
                 }
-
-        return pd.DataFrame.from_dict(artists, orient="index")
-
-    def fetch_audio_features(self, track_ids: List[str]) -> pd.DataFrame:
-        """Fetch and process audio features data."""
+        
+        artists_df = pd.DataFrame.from_dict(artists, orient="index")
+        artists_df.to_csv(f"/opt/airflow/data/artists_raw_{self.current_time.strftime("%Y%m%d%H%M%S")}.csv")
+        return artists_df
+         
+    def fetch_and_process_audio_features(self, track_ids: List[str]) -> pd.DataFrame:
+        """Fetch and process audio features data and save to csv."""
         audio_features_list = []
         for i in range(0, len(track_ids), 100):
             audio_features = self.sp.audio_features(track_ids[i : i + 50])
@@ -124,17 +131,17 @@ class FetchSpotifyData:
                 "updated_at",
             ]
         ]
+        audio_features_df.to_csv(f"/opt/airflow/data/audio_features_raw_{self.current_time.strftime("%Y%m%d%H%M%S")}.csv")
         return audio_features_df
 
     def load_data(self):
         """Load data into postgresql database."""
-        recent_songs, track_ids, artist_ids = self.fetch_song_data()
-        if recent_songs:
-            self.logger.info(f"Fetched {len(recent_songs)} songs.")
+        recent_songs_df, track_ids, artist_ids = self.fetch_and_process_song_data()
+        if not recent_songs_df.empty:
+            self.logger.info(f"Fetched {len(recent_songs_df)} songs.")
 
-            recent_songs_df = pd.DataFrame(recent_songs)
-            artists_df = self.fetch_artist_data(artist_ids)
-            audio_features_df = self.fetch_audio_features(track_ids)
+            artists_df = self.fetch_and_process_artist_data(artist_ids)
+            audio_features_df = self.fetch_and_process_audio_features(track_ids)
 
             dfs = [
                 (recent_songs_df, "recently_played_raw"),
