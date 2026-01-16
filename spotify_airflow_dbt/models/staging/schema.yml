@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: stg_recently_played
+    columns:
+      - name: played_at
+        tests:
+          - not_null
+          - unique
+      - name: track_id
+        tests:
+          - not_null
+      - name: artist_id
+        tests:
+          - not_null
+
+  - name: stg_artists
+    columns:
+      - name: artist_id
+        tests:
+          - not_null
+          - unique
+      - name: artist_name
+        tests:
+          - not_null
+
+  - name: stg_audio_features
+    columns:
+      - name: track_id
+        tests:
+          - not_null
+          - unique
+      - name: danceability
+        tests:
+          - not_null
+      - name: energy
+        tests:
+          - not_null

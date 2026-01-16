@@ -1,0 +1,90 @@
+version: 2
+
+sources:
+  - name: spotify_raw
+    description: "Raw Spotify data from API ingestion"
+    database: airflow
+    schema: public
+    tables:
+      - name: recently_played_raw
+        description: "Raw recently played tracks data"
+        columns:
+          - name: played_at
+            description: "Timestamp when track was played"
+            tests:
+              - not_null
+              - unique
+          - name: track_id
+            description: "Spotify track ID"
+          - name: track_name
+            description: "Track name"
+          - name: artist_id
+            description: "Spotify artist ID"
+          - name: artist_name
+            description: "Artist name"
+          - name: album_name
+            description: "Album name"
+          - name: updated_at
+            description: "When record was last updated"
+          - name: transformed
+            description: "Whether record has been transformed"
+
+      - name: artists_raw
+        description: "Raw artist information and genres"
+        columns:
+          - name: artist_id
+            description: "Spotify artist ID"
+            tests:
+              - not_null
+              - unique
+          - name: artist_name
+            description: "Artist name"
+          - name: genres
+            description: "Artist genres (JSON array)"
+          - name: updated_at
+            description: "When record was last updated"
+
+      - name: audio_features_raw
+        description: "Raw audio features for tracks"
+        columns:
+          - name: id
+            description: "Spotify track ID"
+            tests:
+              - not_null
+              - unique
+          - name: danceability
+            description: "Danceability score (0-1)"
+          - name: energy
+            description: "Energy score (0-1)"
+          - name: track_name
+            description: "Track name"
+          - name: artist_id
+            description: "Spotify artist ID"
+          - name: artist_name
+            description: "Artist name"
+          - name: album_name
+            description: "Album name"
+          - name: key
+            description: "Musical key (0-11)"
+          - name: loudness
+            description: "Loudness in dB"
+          - name: mode
+            description: "Mode (0=minor, 1=major)"
+          - name: speechiness
+            description: "Speechiness score (0-1)"
+          - name: acousticness
+            description: "Acousticness score (0-1)"
+          - name: instrumentalness
+            description: "Instrumentalness score (0-1)"
+          - name: liveness
+            description: "Liveness score (0-1)"
+          - name: valence
+            description: "Valence score (0-1)"
+          - name: tempo
+            description: "Tempo in BPM"
+          - name: duration_ms
+            description: "Duration in milliseconds"
+          - name: time_signature
+            description: "Time signature"
+          - name: updated_at
+            description: "When record was last updated"

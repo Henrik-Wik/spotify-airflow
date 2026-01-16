@@ -1,0 +1,40 @@
+version: 2
+
+models:
+  - name: int_spotify_plays_with_features
+    columns:
+      - name: played_at
+        tests:
+          - not_null
+          - unique
+      - name: track_id
+        tests:
+          - not_null
+      - name: artist_id
+        tests:
+          - not_null
+
+  - name: fct_spotify_listening_history
+    columns:
+      - name: played_at
+        tests:
+          - not_null
+          - unique
+      - name: track_id
+        tests:
+          - not_null
+      - name: play_date
+        tests:
+          - not_null
+      - name: tempo_category
+        tests:
+          - accepted_values:
+              values: ['very_slow', 'slow', 'moderate', 'fast', 'very_fast']
+      - name: duration_category
+        tests:
+          - accepted_values:
+              values: ['short', 'medium', 'long', 'very_long']
+      - name: mood_category
+        tests:
+          - accepted_values:
+              values: ['happy_energetic', 'angry_energetic', 'relaxed_happy', 'sad_relaxed']
