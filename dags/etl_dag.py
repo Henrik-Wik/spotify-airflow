@@ -1,9 +1,10 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
+from airflow.providers.dbt.operators.dbt import DbtRunOperator
+from airflow.providers.dbt.operators.dbt import DbtTestOperator
 from datetime import datetime, timedelta
 from tasks.fetch_spotify_data import FetchSpotifyData
-from tasks.sql.sql_transform_data import TRANSFORM_SPOTIFY_DATA
 
 
 default_args = {
@@ -38,9 +39,31 @@ with DAG(
         dag=dag,
     )
 
-    transform_data = SQLExecuteQueryOperator(
-        task_id="transforming_data",
-        conn_id="postgres_localhost",
-        sql=TRANSFORM_SPOTIFY_DATA,
+# Run dbt transformations
+    run_dbt_models = DbtRunOperator(
+        task_id="run_dbt_models",
+        project_dir="/opt/airflow/spotify_airflow_dbt",
+        profiles_dir="/opt/airflow/spotify_airflow_dbt",
+        target="dev",
     )
-fetch_data >> transform_data
+    
+    # Run dbt tests
+    test_dbt_models = DbtTestOperator(
+        task_id="test_dbt_models",
+        project_dir="/opt/airflow/spotify_airflow_dbt",
+        profiles_dir="/opt/airflow/spotify_airflow_dbt",
+        target="dev",
+    )
+    
+    # Mark records as transformed
+    mark_transformed = SQLExecuteQueryOperator(
+        task_id="mark_transformed",
+        conn_id="postgres_localhost",
+        sql="""
+            UPDATE recently_played_raw
+            SET transformed = TRUE
+            WHERE transformed = FALSE;
+        """,
+    )
+
+fetch_data >> run_dbt_models >> test_dbt_models >> mark_transformed

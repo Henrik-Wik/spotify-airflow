@@ -90,6 +90,15 @@ x-airflow-common:
       condition: service_healthy
 
 services:
+  # dbt:
+  #   container_name: dbt
+  #   build: .
+  #   image: ghcr.io/dbt-labs/dbt-core:1.8.0
+  #   volumes:
+  #     - ./dbt:/usr/dbt
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
   postgres:
     image: postgres:13
     environment:
